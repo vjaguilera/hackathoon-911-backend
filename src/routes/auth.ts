@@ -36,6 +36,9 @@ const router = Router();
  *         phone_number:
  *           type: string
  *           description: User's phone number (optional)
+ *         rut:
+ *           type: string
+ *           description: Chilean RUT (optional, e.g., 19831267-3)
  *         profile_picture_url:
  *           type: string
  *           format: uri
@@ -94,6 +97,7 @@ const router = Router();
  *             password: "securePassword123"
  *             full_name: "John Doe"
  *             phone_number: "+56912345678"
+ *             rut: "19831267-3"
  *             profile_picture_url: "https://example.com/profile.jpg"
  *     responses:
  *       201:

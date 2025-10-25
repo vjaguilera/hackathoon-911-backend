@@ -128,7 +128,7 @@ export const getUserById = async (req: Request, res: Response) => {
 export const updateCurrentUser = async (req: AuthenticatedRequest, res: Response) => {
   try {
     const userId = req.user?.uid;
-    const { full_name, phone_number, profile_picture_url } = req.body;
+    const { full_name, phone_number, profile_picture_url, rut } = req.body;
     
     if (!userId) {
       return res.status(401).json({
@@ -138,18 +138,51 @@ export const updateCurrentUser = async (req: AuthenticatedRequest, res: Response
       });
     }
 
+    // Validate RUT format if provided
+    if (rut) {
+      const { validateRutFormat, formatRut } = await import('../utils/validation');
+      
+      if (!validateRutFormat(rut)) {
+        return res.status(400).json({
+          success: false,
+          error: 'Bad Request',
+          message: 'Invalid RUT format. Expected format: 12345678-9'
+        });
+      }
+
+      const formattedRut = formatRut(rut);
+      
+      // Check if RUT is already taken by another user
+      const existingUser = await prisma.users.findFirst({
+        where: { 
+          rut: formattedRut,
+          NOT: { id: userId }
+        }
+      });
+
+      if (existingUser) {
+        return res.status(400).json({
+          success: false,
+          error: 'Bad Request',
+          message: 'RUT is already registered by another user'
+        });
+      }
+    }
+
     const updatedUser = await prisma.users.update({
       where: { id: userId },
       data: {
         ...(full_name && { full_name }),
         ...(phone_number && { phone_number }),
         ...(profile_picture_url && { profile_picture_url }),
+        ...(rut && { rut: (await import('../utils/validation')).formatRut(rut) }),
       },
       select: {
         id: true,
         email: true,
         full_name: true,
         phone_number: true,
+        rut: true,
         profile_picture_url: true,
         created_at: true,
         updated_at: true,
@@ -199,6 +232,138 @@ export const deleteCurrentUser = async (req: AuthenticatedRequest, res: Response
       success: false,
       error: 'Internal Server Error',
       message: 'Failed to delete account'
+    });
+  }
+};
+
+// Get user by RUT (authenticated endpoint)
+export const getUserByRut = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { rut } = req.params;
+    
+    if (!rut) {
+      return res.status(400).json({
+        success: false,
+        error: 'Bad Request',
+        message: 'RUT parameter is required'
+      });
+    }
+
+    // Import validation function
+    const { validateRutFormat, formatRut } = await import('../utils/validation');
+    
+    // Validate RUT format
+    if (!validateRutFormat(rut)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Bad Request',
+        message: 'Invalid RUT format. Expected format: 12345678-9'
+      });
+    }
+
+    // Format RUT (convert to uppercase if needed)
+    const formattedRut = formatRut(rut);
+    
+    // Find user by RUT
+    const user = await prisma.users.findUnique({
+      where: { rut: formattedRut },
+      select: {
+        id: true,
+        email: true,
+        full_name: true,
+        rut: true,
+        phone_number: true,
+        profile_picture_url: true,
+        created_at: true,
+        updated_at: true
+      }
+    });
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        error: 'Not Found',
+        message: 'User not found with the provided RUT'
+      });
+    }
+
+    res.json({
+      success: true,
+      data: user
+    });
+  } catch (error) {
+    console.error('Error fetching user by RUT:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Internal Server Error',
+      message: 'Failed to fetch user by RUT'
+    });
+  }
+};
+
+// Get user by phone number
+export const getUserByPhoneNumber = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { phoneNumber } = req.params;
+    
+    if (!phoneNumber) {
+      return res.status(400).json({
+        success: false,
+        error: 'Bad Request',
+        message: 'Phone number parameter is required'
+      });
+    }
+
+    // Remove "+" character if present
+    const formattedPhoneNumber = phoneNumber.replace(/^\+/, '');
+    
+    // Basic phone number validation (check if it's numeric after removing +)
+    if (!/^\d+$/.test(formattedPhoneNumber)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Bad Request',
+        message: 'Invalid phone number format. Phone number should contain only digits (+ is allowed at the beginning)'
+      });
+    }
+
+    // Find user by phone number (search both with and without + prefix)
+    const user = await prisma.users.findFirst({
+      where: {
+        OR: [
+          { phone_number: formattedPhoneNumber },
+          { phone_number: `+${formattedPhoneNumber}` }
+        ]
+      },
+      select: {
+        id: true,
+        email: true,
+        full_name: true,
+        rut: true,
+        phone_number: true,
+        profile_picture_url: true,
+        created_at: true,
+        updated_at: true
+      }
+    });
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        error: 'Not Found',
+        message: 'User not found with the provided phone number'
+      });
+    }
+
+    res.json({
+      success: true,
+      data: user
+    });
+  } catch (error) {
+    console.error('Error fetching user by phone number:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Internal Server Error',
+      message: 'Failed to fetch user by phone number'
     });
   }
 };

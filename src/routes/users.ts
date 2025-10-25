@@ -4,7 +4,9 @@ import {
   getCurrentUser, 
   getUserById, 
   updateCurrentUser, 
-  deleteCurrentUser 
+  deleteCurrentUser,
+  getUserByRut,
+  getUserByPhoneNumber
 } from '../controllers/users';
 import { authenticateFirebaseToken } from '../middleware/auth';
 
@@ -33,6 +35,9 @@ const router = Router();
  *         full_name:
  *           type: string
  *           description: User's full name
+ *         rut:
+ *           type: string
+ *           description: Chilean RUT (e.g., 19831267-3)
  *         profile_picture_url:
  *           type: string
  *           format: uri
@@ -161,5 +166,77 @@ router.delete('/me', authenticateFirebaseToken, deleteCurrentUser);
  *         description: User not found
  */
 router.get('/:id', authenticateFirebaseToken, getUserById);
+
+/**
+ * @swagger
+ * /api/v1/users/rut/{rut}:
+ *   get:
+ *     summary: Get user by RUT
+ *     tags: [Users]
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: rut
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Chilean RUT (e.g., 19831267-3)
+ *     responses:
+ *       200:
+ *         description: User retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   $ref: '#/components/schemas/User'
+ *       400:
+ *         description: Invalid RUT format
+ *       404:
+ *         description: User not found with the provided RUT
+ *       401:
+ *         description: Authentication required
+ */
+router.get('/rut/:rut', authenticateFirebaseToken, getUserByRut);
+
+/**
+ * @swagger
+ * /api/v1/users/phone/{phoneNumber}:
+ *   get:
+ *     summary: Get user by phone number
+ *     tags: [Users]
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: phoneNumber
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Phone number (+ character will be automatically removed if present)
+ *     responses:
+ *       200:
+ *         description: User retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   $ref: '#/components/schemas/User'
+ *       400:
+ *         description: Invalid phone number format
+ *       404:
+ *         description: User not found with the provided phone number
+ *       401:
+ *         description: Authentication required
+ */
+router.get('/phone/:phoneNumber', authenticateFirebaseToken, getUserByPhoneNumber);
 
 export default router;

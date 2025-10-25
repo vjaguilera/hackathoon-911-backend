@@ -10,7 +10,8 @@ const registerSchema = z.object({
   password: z.string().min(6, 'Password must be at least 6 characters'),
   full_name: z.string().min(1, 'Full name is required'),
   phone_number: z.string().optional(),
-  profile_picture_url: z.string().url().optional().or(z.literal(''))
+  profile_picture_url: z.string().url().optional().or(z.literal('')),
+  rut: z.string().optional()
 });
 
 const signInSchema = z.object({
@@ -40,7 +41,36 @@ export const registerUser = async (req: Request, res: Response) => {
       });
     }
 
-    const { email, password, full_name, phone_number, profile_picture_url } = validationResult.data;
+    const { email, password, full_name, phone_number, profile_picture_url, rut } = validationResult.data;
+
+    // Validate RUT format if provided
+    let formattedRut = null;
+    if (rut) {
+      const { validateRutFormat, formatRut } = await import('../utils/validation');
+      
+      if (!validateRutFormat(rut)) {
+        return res.status(400).json({
+          success: false,
+          error: 'Bad Request',
+          message: 'Invalid RUT format. Expected format: 12345678-9'
+        });
+      }
+      
+      formattedRut = formatRut(rut);
+      
+      // Check if RUT is already registered
+      const existingRutUser = await prisma.users.findUnique({
+        where: { rut: formattedRut }
+      });
+
+      if (existingRutUser) {
+        return res.status(409).json({
+          success: false,
+          error: 'Conflict',
+          message: 'User with this RUT already exists'
+        });
+      }
+    }
 
     // Check if user already exists in our database
     const existingUser = await prisma.users.findUnique({
@@ -73,6 +103,7 @@ export const registerUser = async (req: Request, res: Response) => {
             email,
             full_name,
             phone_number: phone_number || null,
+            rut: formattedRut,
             profile_picture_url: profile_picture_url || null,
             updated_at: new Date()
           }
@@ -420,17 +451,43 @@ export const loginWithEmail = async (req: Request, res: Response) => {
         const firebaseUser = await auth.getUserByEmail(email);
         
         // Create a custom token for the user
-        // Note: The actual password verification happens on the client side
-        // This endpoint assumes the client has already verified the password
-        // and is requesting a server-side token for API access
         const customToken = await auth.createCustomToken(firebaseUser.uid);
+
+        // Exchange custom token for ID token using Firebase REST API
+        const apiKey = process.env.FIREBASE_API_KEY;
+        if (!apiKey) {
+          throw new Error('FIREBASE_API_KEY not configured');
+        }
+
+        const exchangeResponse = await fetch(
+          `https://identitytoolkit.googleapis.com/v1/accounts:signInWithCustomToken?key=${apiKey}`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              token: customToken,
+              returnSecureToken: true
+            })
+          }
+        );
+
+        const exchangeData = await exchangeResponse.json() as any;
+
+        if (!exchangeResponse.ok) {
+          console.error('Firebase token exchange failed:', exchangeData);
+          throw new Error(`Token exchange failed: ${exchangeData.error?.message || 'Unknown error'}`);
+        }
 
         return res.json({
           success: true,
           message: 'Login successful',
           data: {
             user,
-            custom_token: customToken,
+            id_token: exchangeData.idToken,
+            refresh_token: exchangeData.refreshToken,
+            expires_in: exchangeData.expiresIn,
             firebase_uid: firebaseUser.uid
           }
         });

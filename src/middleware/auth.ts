@@ -16,6 +16,8 @@ export const authenticateFirebaseToken = async (
 ) => {
   try {
     const authHeader = req.headers.authorization;
+
+    console.log("\n\nTOKEN", authHeader)
     
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return res.status(401).json({ 
