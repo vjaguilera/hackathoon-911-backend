@@ -1,0 +1,83 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: hackathoon-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: hackathoon_911
+      POSTGRES_USER: hackathoon
+      POSTGRES_PASSWORD: hackathoon
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/pgdata
+      - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql:ro
+    ports:
+      - "5432:5432"
+    networks:
+      - hackathoon-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U hackathoon -d hackathoon_911"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Backend API
+  backend:
+    build: .
+    container_name: hackathoon-backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      NODE_ENV: development
+      PORT: 3000
+      DATABASE_URL: postgresql://hackathoon:hackathoon@postgres:5432/hackathoon_911?schema=public
+      FIREBASE_PROJECT_ID: ${FIREBASE_PROJECT_ID:-hackathoon-911-dev}
+      FIREBASE_CLIENT_EMAIL: ${FIREBASE_CLIENT_EMAIL}
+      FIREBASE_PRIVATE_KEY: ${FIREBASE_PRIVATE_KEY}
+      API_VERSION: v1
+      API_PREFIX: /api/v1
+      ALLOWED_ORIGINS: http://localhost:3000,http://localhost:3001,http://localhost:8080
+      JWT_SECRET: ${JWT_SECRET:-dev-jwt-secret-key-change-in-production}
+      BCRYPT_ROUNDS: 12
+      MAX_FILE_SIZE: 10485760
+      UPLOAD_DIR: uploads
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./uploads:/app/uploads
+    networks:
+      - hackathoon-network
+    # Use the startup script from the container
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Adminer (Database management UI)
+  adminer:
+    image: adminer:latest
+    container_name: hackathoon-adminer
+    restart: unless-stopped
+    depends_on:
+      - postgres
+    ports:
+      - "8080:8080"
+    networks:
+      - hackathoon-network
+    environment:
+      ADMINER_DEFAULT_SERVER: postgres
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  hackathoon-network:
+    driver: bridge

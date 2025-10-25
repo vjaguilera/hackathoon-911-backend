@@ -1,0 +1,201 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+    provider      = "prisma-client-js"
+    binaryTargets = ["native", "debian-openssl-1.1.x", "debian-openssl-3.0.x"]
+}
+
+datasource db {
+    provider = "postgresql"
+    url      = env("DATABASE_URL")
+}
+
+// 1. Users - Información básica del usuario
+model User {
+    id                  String   @id @default(cuid())
+    email               String   @unique
+    phone_number        String?
+    full_name           String
+    profile_picture_url String?
+    created_at          DateTime @default(now())
+    updated_at          DateTime @updatedAt
+
+    // Relations
+    medical_info            MedicalInfo?
+    emergency_contacts      EmergencyContact[]
+    vehicles                Vehicle[]
+    addresses               Address[]
+    bank_accounts           BankAccount[]
+    health_insurance        HealthInsurance[]
+    supplementary_insurance SupplementaryInsurance[]
+    emergency_events        EmergencyEvent[]
+
+    @@map("users")
+}
+
+// 2. Medical Info - Datos médicos del usuario
+model MedicalInfo {
+    id                  String   @id @default(cuid())
+    user_id             String   @unique
+    medical_conditions  String[]
+    allergies           String[]
+    medications         String[]
+    blood_type          String?
+    emergency_notes     String?
+    voice_password_hash String?
+    created_at          DateTime @default(now())
+    updated_at          DateTime @updatedAt
+
+    // Relations
+    user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+    @@map("medical_info")
+}
+
+// 3. Emergency Contacts - Contactos de emergencia
+model EmergencyContact {
+    id           String   @id @default(cuid())
+    user_id      String
+    contact_name String
+    phone_number String
+    relationship String
+    email        String?
+    created_at   DateTime @default(now())
+    updated_at   DateTime @updatedAt
+
+    // Relations
+    user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+    @@map("emergency_contacts")
+}
+
+// 4. Vehicles - Información de vehículos
+model Vehicle {
+    id            String   @id @default(cuid())
+    user_id       String
+    license_plate String
+    brand         String
+    model         String
+    year          Int
+    color         String
+    vin           String?
+    vehicle_type  String
+    created_at    DateTime @default(now())
+    updated_at    DateTime @updatedAt
+
+    // Relations
+    user      User               @relation(fields: [user_id], references: [id], onDelete: Cascade)
+    insurance VehicleInsurance[]
+
+    @@map("vehicles")
+}
+
+// 5. Vehicle Insurance - Seguros vehiculares
+model VehicleInsurance {
+    id                 String   @id @default(cuid())
+    vehicle_id         String
+    insurance_company  String
+    policy_number      String
+    coverage_type      String
+    expiration_date    DateTime
+    phone_insurance    String
+    claim_process_info String?
+    created_at         DateTime @default(now())
+    updated_at         DateTime @updatedAt
+
+    // Relations
+    vehicle Vehicle @relation(fields: [vehicle_id], references: [id], onDelete: Cascade)
+
+    @@map("vehicle_insurance")
+}
+
+// 6. Addresses - Direcciones del usuario
+model Address {
+    id             String   @id @default(cuid())
+    user_id        String
+    street_address String
+    city           String
+    region         String
+    postal_code    String
+    country        String
+    address_type   String // home, work, other
+    is_primary     Boolean  @default(false)
+    created_at     DateTime @default(now())
+    updated_at     DateTime @updatedAt
+
+    // Relations
+    user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+    @@map("addresses")
+}
+
+// 7. Bank Accounts - Información bancaria
+model BankAccount {
+    id             String   @id @default(cuid())
+    user_id        String
+    bank_name      String
+    account_type   String
+    account_number String
+    rut            String
+    created_at     DateTime @default(now())
+    updated_at     DateTime @updatedAt
+
+    // Relations
+    user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+    @@map("bank_accounts")
+}
+
+// 8. Health Insurance - Seguro de salud (ISAPRE/FONASA)
+model HealthInsurance {
+    id               String   @id @default(cuid())
+    user_id          String
+    primary_provider String // ISAPRE, FONASA
+    provider_name    String
+    plan_name        String?
+    member_id        String
+    coverage_info    String?
+    created_at       DateTime @default(now())
+    updated_at       DateTime @updatedAt
+
+    // Relations
+    user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+    @@map("health_insurance")
+}
+
+// 9. Supplementary Insurance - Seguros complementarios
+model SupplementaryInsurance {
+    id                String   @id @default(cuid())
+    user_id           String
+    insurance_type    String // dental, salud, etc
+    insurance_company String
+    policy_number     String
+    coverage_info     String?
+    created_at        DateTime @default(now())
+    updated_at        DateTime @updatedAt
+
+    // Relations
+    user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+    @@map("supplementary_insurance")
+}
+
+// 10. Emergency Events - Eventos de emergencia
+model EmergencyEvent {
+    id                  String   @id @default(cuid())
+    user_id             String
+    event_type          String
+    description         String
+    location            String
+    audio_recording_url String?
+    status              String   @default("active") // active, resolved, cancelled
+    created_at          DateTime @default(now())
+    updated_at          DateTime @updatedAt
+
+    // Relations
+    user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+    @@map("emergency_events")
+}
