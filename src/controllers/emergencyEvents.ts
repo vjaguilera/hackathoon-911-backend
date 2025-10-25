@@ -24,13 +24,13 @@ export const getUserEmergencyEvents = async (req: AuthenticatedRequest, res: Res
     }
 
     const [events, total] = await Promise.all([
-      prisma.emergencyEvent.findMany({
+      prisma.emergency_events.findMany({
         where,
         orderBy: { created_at: 'desc' },
         skip,
         take: Number(limit),
         include: {
-          user: {
+          users: {
             select: {
               id: true,
               full_name: true,
@@ -40,7 +40,7 @@ export const getUserEmergencyEvents = async (req: AuthenticatedRequest, res: Res
           }
         }
       }),
-      prisma.emergencyEvent.count({ where })
+      prisma.emergency_events.count({ where })
     ]);
 
     res.json({
@@ -85,7 +85,7 @@ export const createEmergencyEvent = async (req: AuthenticatedRequest, res: Respo
       });
     }
 
-    const emergencyEvent = await prisma.emergencyEvent.create({
+    const emergencyEvent = await prisma.emergency_events.create({
       data: {
         user_id: userId,
         event_type,
@@ -95,7 +95,7 @@ export const createEmergencyEvent = async (req: AuthenticatedRequest, res: Respo
         status: 'active'
       },
       include: {
-        user: {
+        users: {
           select: {
             id: true,
             full_name: true,
@@ -135,13 +135,13 @@ export const getEmergencyEventById = async (req: AuthenticatedRequest, res: Resp
       });
     }
 
-    const emergencyEvent = await prisma.emergencyEvent.findFirst({
+    const emergencyEvent = await prisma.emergency_events.findFirst({
       where: {
         id,
         user_id: userId
       },
       include: {
-        user: {
+        users: {
           select: {
             id: true,
             full_name: true,
@@ -190,7 +190,7 @@ export const updateEmergencyEvent = async (req: AuthenticatedRequest, res: Respo
     }
 
     // Check if event exists and belongs to user
-    const existingEvent = await prisma.emergencyEvent.findFirst({
+    const existingEvent = await prisma.emergency_events.findFirst({
       where: {
         id,
         user_id: userId
@@ -205,7 +205,7 @@ export const updateEmergencyEvent = async (req: AuthenticatedRequest, res: Respo
       });
     }
 
-    const updatedEvent = await prisma.emergencyEvent.update({
+    const updatedEvent = await prisma.emergency_events.update({
       where: { id },
       data: {
         ...(event_type && { event_type }),
@@ -215,7 +215,7 @@ export const updateEmergencyEvent = async (req: AuthenticatedRequest, res: Respo
         ...(status && { status })
       },
       include: {
-        user: {
+        users: {
           select: {
             id: true,
             full_name: true,
@@ -256,7 +256,7 @@ export const deleteEmergencyEvent = async (req: AuthenticatedRequest, res: Respo
     }
 
     // Check if event exists and belongs to user
-    const existingEvent = await prisma.emergencyEvent.findFirst({
+    const existingEvent = await prisma.emergency_events.findFirst({
       where: {
         id,
         user_id: userId
@@ -271,7 +271,7 @@ export const deleteEmergencyEvent = async (req: AuthenticatedRequest, res: Respo
       });
     }
 
-    await prisma.emergencyEvent.delete({
+    await prisma.emergency_events.delete({
       where: { id }
     });
 
@@ -300,13 +300,13 @@ export const getAllEmergencyEvents = async (req: Request, res: Response) => {
     if (event_type) where.event_type = event_type;
 
     const [events, total] = await Promise.all([
-      prisma.emergencyEvent.findMany({
+      prisma.emergency_events.findMany({
         where,
         orderBy: { created_at: 'desc' },
         skip,
         take: Number(limit),
         include: {
-          user: {
+          users: {
             select: {
               id: true,
               full_name: true,
@@ -316,7 +316,7 @@ export const getAllEmergencyEvents = async (req: Request, res: Response) => {
           }
         }
       }),
-      prisma.emergencyEvent.count({ where })
+      prisma.emergency_events.count({ where })
     ]);
 
     res.json({

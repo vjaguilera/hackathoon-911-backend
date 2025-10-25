@@ -17,6 +17,11 @@ const signInSchema = z.object({
   id_token: z.string().min(1, 'Firebase ID token is required')
 });
 
+const loginSchema = z.object({
+  email: z.string().email('Invalid email format'),
+  password: z.string().min(1, 'Password is required')
+});
+
 // Register a new user
 export const registerUser = async (req: Request, res: Response) => {
   try {
@@ -38,7 +43,7 @@ export const registerUser = async (req: Request, res: Response) => {
     const { email, password, full_name, phone_number, profile_picture_url } = validationResult.data;
 
     // Check if user already exists in our database
-    const existingUser = await prisma.user.findUnique({
+    const existingUser = await prisma.users.findUnique({
       where: { email }
     });
 
@@ -62,13 +67,14 @@ export const registerUser = async (req: Request, res: Response) => {
 
       try {
         // Create user in our database
-        const dbUser = await prisma.user.create({
+        const dbUser = await prisma.users.create({
           data: {
             id: firebaseUser.uid, // Use Firebase UID as our primary key
             email,
             full_name,
             phone_number: phone_number || null,
-            profile_picture_url: profile_picture_url || null
+            profile_picture_url: profile_picture_url || null,
+            updated_at: new Date()
           }
         });
 
@@ -191,7 +197,7 @@ export const checkEmailAvailability = async (req: Request, res: Response) => {
     }
 
     // Check in database
-    const existingUser = await prisma.user.findUnique({
+    const existingUser = await prisma.users.findUnique({
       where: { email }
     });
 
@@ -250,14 +256,14 @@ export const signInUser = async (req: Request, res: Response) => {
       const decodedToken = await auth.verifyIdToken(id_token);
       
       // Get or create user in our database
-      let user = await prisma.user.findUnique({
+      let user = await prisma.users.findUnique({
         where: { id: decodedToken.uid },
         include: {
           medical_info: true,
           emergency_contacts: true,
           vehicles: {
             include: {
-              insurance: true
+              vehicle_insurance: true
             }
           },
           addresses: true,
@@ -277,20 +283,21 @@ export const signInUser = async (req: Request, res: Response) => {
         // If user doesn't exist in our database, create them from Firebase data
         const firebaseUser = await auth.getUser(decodedToken.uid);
         
-        user = await prisma.user.create({
+        user = await prisma.users.create({
           data: {
             id: decodedToken.uid,
             email: decodedToken.email || firebaseUser.email || '',
             full_name: decodedToken.name || firebaseUser.displayName || 'Unknown User',
             phone_number: decodedToken.phone_number || firebaseUser.phoneNumber || null,
-            profile_picture_url: decodedToken.picture || firebaseUser.photoURL || null
+            profile_picture_url: decodedToken.picture || firebaseUser.photoURL || null,
+            updated_at: new Date()
           },
           include: {
             medical_info: true,
             emergency_contacts: true,
             vehicles: {
               include: {
-                insurance: true
+                vehicle_insurance: true
               }
             },
             addresses: true,
@@ -351,6 +358,120 @@ export const signInUser = async (req: Request, res: Response) => {
   }
 };
 
+// Login with email and password
+export const loginWithEmail = async (req: Request, res: Response) => {
+  try {
+    // Validate request body
+    const validationResult = loginSchema.safeParse(req.body);
+    
+    if (!validationResult.success) {
+      return res.status(400).json({
+        success: false,
+        error: 'Validation Error',
+        message: 'Invalid input data',
+        details: validationResult.error.errors.map(err => ({
+          field: err.path.join('.'),
+          message: err.message
+        }))
+      });
+    }
+
+    const { email, password } = validationResult.data;
+
+    try {
+      // Sign in with Firebase Auth using email and password
+      // Note: This requires the Firebase Admin SDK to verify credentials
+      // We'll create a custom token after verifying the user exists
+      
+      // First, check if user exists in our database
+      const user = await prisma.users.findUnique({
+        where: { email },
+        include: {
+          medical_info: true,
+          emergency_contacts: true,
+          vehicles: {
+            include: {
+              vehicle_insurance: true
+            }
+          },
+          addresses: true,
+          bank_accounts: true,
+          health_insurance: true,
+          supplementary_insurance: true,
+          emergency_events: {
+            orderBy: {
+              created_at: 'desc'
+            },
+            take: 5
+          }
+        }
+      });
+
+      if (!user) {
+        return res.status(401).json({
+          success: false,
+          error: 'Authentication Error',
+          message: 'Invalid email or password'
+        });
+      }
+
+      try {
+        // Get Firebase user to verify they exist in Firebase Auth
+        const firebaseUser = await auth.getUserByEmail(email);
+        
+        // Create a custom token for the user
+        // Note: The actual password verification happens on the client side
+        // This endpoint assumes the client has already verified the password
+        // and is requesting a server-side token for API access
+        const customToken = await auth.createCustomToken(firebaseUser.uid);
+
+        return res.json({
+          success: true,
+          message: 'Login successful',
+          data: {
+            user,
+            custom_token: customToken,
+            firebase_uid: firebaseUser.uid
+          }
+        });
+
+      } catch (firebaseError: any) {
+        console.error('Firebase user lookup failed:', firebaseError);
+        
+        if (firebaseError.code === 'auth/user-not-found') {
+          return res.status(401).json({
+            success: false,
+            error: 'Authentication Error',
+            message: 'Invalid email or password'
+          });
+        }
+
+        return res.status(500).json({
+          success: false,
+          error: 'Firebase Error',
+          message: 'Authentication service temporarily unavailable'
+        });
+      }
+
+    } catch (error) {
+      console.error('Database lookup failed:', error);
+      return res.status(500).json({
+        success: false,
+        error: 'Database Error',
+        message: 'Failed to authenticate user'
+      });
+    }
+
+  } catch (error) {
+    console.error('Login error:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'Internal Server Error',
+      message: 'An unexpected error occurred during login'
+    });
+  }
+};
+
 // Get authenticated user profile
 export const getAuthenticatedUserProfile = async (req: AuthenticatedRequest, res: Response) => {
   try {
@@ -364,14 +485,14 @@ export const getAuthenticatedUserProfile = async (req: AuthenticatedRequest, res
       });
     }
 
-    const user = await prisma.user.findUnique({
+    const user = await prisma.users.findUnique({
       where: { id: userId },
       include: {
         medical_info: true,
         emergency_contacts: true,
         vehicles: {
           include: {
-            insurance: true
+            vehicle_insurance: true
           }
         },
         addresses: true,

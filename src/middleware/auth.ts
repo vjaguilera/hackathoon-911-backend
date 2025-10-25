@@ -38,13 +38,13 @@ export const authenticateFirebaseToken = async (
       const decodedToken = await auth.verifyIdToken(token);
       
       // Check if user exists in our database, create if not
-      let user = await prisma.user.findUnique({
+      let user = await prisma.users.findUnique({
         where: { id: decodedToken.uid }
       });
 
       if (!user && decodedToken.email) {
         // Create user if they don't exist
-        user = await prisma.user.create({
+        user = await prisma.users.create({
           data: {
             id: decodedToken.uid,
             email: decodedToken.email,

@@ -5,7 +5,7 @@ import { AuthenticatedRequest } from '../middleware/auth';
 // Get all users (Admin only)
 export const getAllUsers = async (req: Request, res: Response) => {
   try {
-    const users = await prisma.user.findMany({
+    const users = await prisma.users.findMany({
       select: {
         id: true,
         email: true,
@@ -44,16 +44,12 @@ export const getCurrentUser = async (req: AuthenticatedRequest, res: Response) =
       });
     }
 
-    const user = await prisma.user.findUnique({
+    const user = await prisma.users.findUnique({
       where: { id: userId },
       include: {
         medical_info: true,
         emergency_contacts: true,
-        vehicles: {
-          include: {
-            insurance: true
-          }
-        },
+        vehicles: true,
         addresses: true,
         bank_accounts: true,
         health_insurance: true,
@@ -94,7 +90,7 @@ export const getUserById = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     
-    const user = await prisma.user.findUnique({
+    const user = await prisma.users.findUnique({
       where: { id },
       select: {
         id: true,
@@ -142,7 +138,7 @@ export const updateCurrentUser = async (req: AuthenticatedRequest, res: Response
       });
     }
 
-    const updatedUser = await prisma.user.update({
+    const updatedUser = await prisma.users.update({
       where: { id: userId },
       data: {
         ...(full_name && { full_name }),
@@ -189,7 +185,7 @@ export const deleteCurrentUser = async (req: AuthenticatedRequest, res: Response
     }
 
     // Delete user (cascade will handle related records)
-    await prisma.user.delete({
+    await prisma.users.delete({
       where: { id: userId }
     });
 

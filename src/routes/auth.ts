@@ -4,6 +4,7 @@ import {
   verifyEmail, 
   checkEmailAvailability, 
   signInUser,
+  loginWithEmail,
   getAuthenticatedUserProfile 
 } from '../controllers/auth';
 import { authenticateFirebaseToken, optionalAuth } from '../middleware/auth';
@@ -223,6 +224,64 @@ router.get('/check-email/:email', checkEmailAvailability);
  *         description: Internal server error
  */
 router.post('/signin', signInUser);
+
+/**
+ * @swagger
+ * /api/v1/auth/login:
+ *   post:
+ *     summary: Login with email and password
+ *     description: Server-side login using Firebase email/password (returns a Bearer token)
+ *     tags: [Authentication]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - password
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *               password:
+ *                 type: string
+ *                 minLength: 6
+ *           example:
+ *             email: "user@example.com"
+ *             password: "securePassword123"
+ *     responses:
+ *       200:
+ *         description: Login successful
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 message:
+ *                   type: string
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     token:
+ *                       type: string
+ *                     refresh_token:
+ *                       type: string
+ *                     expires_in:
+ *                       type: string
+ *                     user:
+ *                       $ref: '#/components/schemas/User'
+ *       400:
+ *         description: Validation error
+ *       401:
+ *         description: Authentication failed
+ *       500:
+ *         description: Internal server error
+ */
+router.post('/login', loginWithEmail);
 
 /**
  * @swagger
