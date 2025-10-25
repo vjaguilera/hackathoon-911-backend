@@ -86,7 +86,7 @@ const router = Router();
 
 /**
  * @swagger
- * /api/emergency-contacts:
+ * /api/v1/emergency-contacts:
  *   get:
  *     summary: Get all emergency contacts for the authenticated user
  *     tags: [Emergency Contacts]
@@ -115,7 +115,7 @@ router.get('/', authenticateFirebaseToken, getUserEmergencyContacts);
 
 /**
  * @swagger
- * /api/emergency-contacts/{id}:
+ * /api/v1/emergency-contacts/{id}:
  *   get:
  *     summary: Get a specific emergency contact by ID
  *     tags: [Emergency Contacts]
@@ -151,7 +151,7 @@ router.get('/:id', authenticateFirebaseToken, getEmergencyContactById);
 
 /**
  * @swagger
- * /api/emergency-contacts:
+ * /api/v1/emergency-contacts:
  *   post:
  *     summary: Create a new emergency contact
  *     tags: [Emergency Contacts]
@@ -188,7 +188,7 @@ router.post('/', authenticateFirebaseToken, createEmergencyContact);
 
 /**
  * @swagger
- * /api/emergency-contacts/{id}:
+ * /api/v1/emergency-contacts/{id}:
  *   put:
  *     summary: Update an emergency contact
  *     tags: [Emergency Contacts]
@@ -234,7 +234,7 @@ router.put('/:id', authenticateFirebaseToken, updateEmergencyContact);
 
 /**
  * @swagger
- * /api/emergency-contacts/{id}:
+ * /api/v1/emergency-contacts/{id}:
  *   delete:
  *     summary: Delete an emergency contact
  *     tags: [Emergency Contacts]
