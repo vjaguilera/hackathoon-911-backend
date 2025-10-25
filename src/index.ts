@@ -18,6 +18,7 @@ import bankAccountRoutes from './routes/bankAccounts';
 import healthInsuranceRoutes from './routes/healthInsurance';
 import supplementaryInsuranceRoutes from './routes/supplementaryInsurance';
 import emergencyEventRoutes from './routes/emergencyEvents';
+import validationQuestionRoutes from './routes/validationQuestions';
 
 dotenv.config();
 
@@ -103,6 +104,7 @@ app.use(`${apiPrefix}/bank-accounts`, bankAccountRoutes);
 app.use(`${apiPrefix}/health-insurance`, healthInsuranceRoutes);
 app.use(`${apiPrefix}/supplementary-insurance`, supplementaryInsuranceRoutes);
 app.use(`${apiPrefix}/emergency-events`, emergencyEventRoutes);
+app.use(`${apiPrefix}`, validationQuestionRoutes);
 
 // Root endpoint
 app.get('/', (req: Request, res: Response) => {

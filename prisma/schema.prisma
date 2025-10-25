@@ -115,7 +115,18 @@ model users {
   health_insurance        health_insurance[]
   medical_info            medical_info?
   supplementary_insurance supplementary_insurance[]
+  validation_questions    validation_questions[]
   vehicles                vehicles[]
+}
+
+model validation_questions {
+  id          String   @id @default(uuid())
+  user_id     String
+  question    String
+  answer_hash String
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+  users       users    @relation(fields: [user_id], references: [id], onDelete: Cascade)
 }
 
 model vehicle_insurance {
