@@ -1,7 +1,6 @@
 import { Request, Response } from 'express';
 import { prisma } from '../utils/database';
 import { AuthenticatedRequest } from '../middleware/auth';
-import { v4 as uuidv4 } from 'uuid';
 
 // Get all emergency events for current user
 export const getUserEmergencyEvents = async (req: AuthenticatedRequest, res: Response) => {
@@ -196,6 +195,8 @@ export const createEmergencyEventFromQueryParams = async (req: Request, res: Res
     if (!userExists) {
       console.log("USER DOEST NOT EXISTS", userExists)
     }
+
+    const { v4: uuidv4 } = await import('uuid');
 
     const emergencyEvent = await prisma.emergency_events.create({
       data: {
