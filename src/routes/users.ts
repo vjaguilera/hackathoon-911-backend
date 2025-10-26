@@ -251,19 +251,19 @@ router.get('/phone/:phoneNumber', authenticateFirebaseTokenOrApiKey, getUserByPh
  *     security:
  *       - BearerAuth: []
  *       - ApiKeyAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               rut:
- *                 type: string
- *                 description: Chilean RUT (e.g., 19831267-3)
- *               phone_number:
- *                 type: string
- *                 description: User's phone number
+ *     parameters:
+ *       - in: query
+ *         name: rut
+ *         schema:
+ *           type: string
+ *         required: false
+ *         description: Chilean RUT (e.g., 19831267-3)
+ *       - in: query
+ *         name: phone_number
+ *         schema:
+ *           type: string
+ *         required: false
+ *         description: User's phone number
  *     responses:
  *       200:
  *         description: User found

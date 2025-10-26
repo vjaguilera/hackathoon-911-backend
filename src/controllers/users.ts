@@ -370,12 +370,13 @@ export const getUserByPhoneNumber = async (req: AuthenticatedRequest, res: Respo
 
 // Search user by RUT or phone number
 export const searchUser = async (req: Request, res: Response) => {
-  const { rut, phone_number } = req.body;
+  const rut = typeof req.query.rut === 'string' ? req.query.rut : undefined;
+  const phone_number = typeof req.query.phone_number === 'string' ? req.query.phone_number : undefined;
 
   if (!rut && !phone_number) {
     return res.status(400).json({
       error: 'Invalid request',
-      message: 'Please provide either rut or phone_number.'
+      message: 'Please provide either rut or phone_number as query parameters.'
     });
   }
 
