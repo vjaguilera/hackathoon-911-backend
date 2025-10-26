@@ -367,3 +367,39 @@ export const getUserByPhoneNumber = async (req: AuthenticatedRequest, res: Respo
     });
   }
 };
+
+// Search user by RUT or phone number
+export const searchUser = async (req: Request, res: Response) => {
+  const { rut, phone_number } = req.body;
+
+  if (!rut && !phone_number) {
+    return res.status(400).json({
+      error: 'Invalid request',
+      message: 'Please provide either rut or phone_number.'
+    });
+  }
+
+  try {
+    let user = null;
+    if (rut) {
+      user = await prisma.users.findUnique({ where: { rut } });
+    } else if (phone_number) {
+      user = await prisma.users.findFirst({ where: { phone_number } });
+    }
+
+    if (!user) {
+      return res.status(404).json({
+        error: 'Not Found',
+        message: 'User not found.'
+      });
+    }
+
+    res.status(200).json({ success: true, data: user });
+  } catch (error) {
+    console.error('Error searching user:', error);
+    res.status(500).json({
+      error: 'Internal Server Error',
+      message: 'Failed to search user.'
+    });
+  }
+};

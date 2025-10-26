@@ -8,7 +8,7 @@ const createAddressSchema = z.object({
   street_address: z.string().min(1, 'Street address is required'),
   city: z.string().min(1, 'City is required'),
   region: z.string().min(1, 'Region is required'),
-  postal_code: z.string().min(1, 'Postal code is required'),
+  postal_code: z.string().optional(),
   country: z.string().min(1, 'Country is required'),
   address_type: z.string().min(1, 'Address type is required'),
   is_primary: z.boolean().optional()
@@ -18,7 +18,7 @@ const updateAddressSchema = z.object({
   street_address: z.string().min(1, 'Street address is required').optional(),
   city: z.string().min(1, 'City is required').optional(),
   region: z.string().min(1, 'Region is required').optional(),
-  postal_code: z.string().min(1, 'Postal code is required').optional(),
+  postal_code: z.string().optional(),
   country: z.string().min(1, 'Country is required').optional(),
   address_type: z.string().min(1, 'Address type is required').optional(),
   is_primary: z.boolean().optional()

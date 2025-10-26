@@ -6,7 +6,8 @@ import {
   updateCurrentUser, 
   deleteCurrentUser,
   getUserByRut,
-  getUserByPhoneNumber
+  getUserByPhoneNumber,
+  searchUser
 } from '../controllers/users';
 import { authenticateFirebaseToken, authenticateFirebaseTokenOrApiKey } from '../middleware/auth';
 
@@ -240,5 +241,46 @@ router.get('/rut/:rut', authenticateFirebaseTokenOrApiKey, getUserByRut);
  *         description: Authentication required
  */
 router.get('/phone/:phoneNumber', authenticateFirebaseTokenOrApiKey, getUserByPhoneNumber);
+
+/**
+ * @swagger
+ * /api/v1/users/search:
+ *   post:
+ *     summary: Search user by RUT or phone number
+ *     tags: [Users]
+ *     security:
+ *       - BearerAuth: []
+ *       - ApiKeyAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               rut:
+ *                 type: string
+ *                 description: Chilean RUT (e.g., 19831267-3)
+ *               phone_number:
+ *                 type: string
+ *                 description: User's phone number
+ *     responses:
+ *       200:
+ *         description: User found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   $ref: '#/components/schemas/User'
+ *       400:
+ *         description: Invalid request
+ *       404:
+ *         description: User not found
+ */
+router.post('/search', authenticateFirebaseTokenOrApiKey, searchUser);
 
 export default router;

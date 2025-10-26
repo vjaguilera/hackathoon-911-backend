@@ -14,7 +14,7 @@ model addresses {
   street_address String
   city           String
   region         String
-  postal_code    String
+  postal_code    String?
   country        String
   address_type   String
   is_primary     Boolean  @default(false)
@@ -63,7 +63,7 @@ model emergency_events {
 model health_insurance {
   id               String   @id @default(uuid())
   user_id          String
-  primary_provider String
+  primary_provider Boolean
   provider_name    String
   plan_name        String?
   member_id        String

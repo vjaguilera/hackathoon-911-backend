@@ -105,7 +105,7 @@ export const createHealthInsurance = async (req: AuthenticatedRequest, res: Resp
     const newHealthInsurance = await prisma.health_insurance.create({
       data: {
         user_id: userId,
-        primary_provider: primary_provider.trim(),
+        primary_provider: primary_provider,
         provider_name: provider_name.trim(),
         plan_name: plan_name ? plan_name.trim() : null,
         member_id: member_id.trim(),
@@ -171,7 +171,7 @@ export const updateHealthInsurance = async (req: AuthenticatedRequest, res: Resp
 
     // Prepare update data
     const updateData: any = {};
-    if (primary_provider) updateData.primary_provider = primary_provider.trim();
+    if (primary_provider) updateData.primary_provider = primary_provider;
     if (provider_name) updateData.provider_name = provider_name.trim();
     if (plan_name !== undefined) updateData.plan_name = plan_name ? plan_name.trim() : null;
     if (member_id) updateData.member_id = member_id.trim();
