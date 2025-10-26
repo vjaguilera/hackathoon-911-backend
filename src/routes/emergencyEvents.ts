@@ -7,7 +7,7 @@ import {
   deleteEmergencyEvent,
   getAllEmergencyEvents
 } from '../controllers/emergencyEvents';
-import { authenticateFirebaseToken } from '../middleware/auth';
+import { authenticateFirebaseToken, authenticateFirebaseTokenOrApiKey } from '../middleware/auth';
 
 const router = Router();
 
@@ -94,6 +94,7 @@ router.get('/', authenticateFirebaseToken, getUserEmergencyEvents);
  *     tags: [Emergency Events]
  *     security:
  *       - BearerAuth: []
+ *       - ApiKeyAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -107,18 +108,29 @@ router.get('/', authenticateFirebaseToken, getUserEmergencyEvents);
  *             properties:
  *               event_type:
  *                 type: string
+ *                 description: Type of emergency (medical, fire, police, etc.)
  *               description:
  *                 type: string
+ *                 description: Description of the emergency
  *               location:
  *                 type: string
+ *                 description: Location of the emergency
  *               audio_recording_url:
  *                 type: string
  *                 format: uri
+ *                 description: URL to audio recording if available
+ *               user_id:
+ *                 type: string
+ *                 description: User ID for the emergency event. Required when using API key authentication. Optional when using Bearer token (uses authenticated user's ID if not provided).
  *     responses:
  *       201:
  *         description: Emergency event created successfully
+ *       400:
+ *         description: Bad Request - Missing required fields, user_id required for API key auth, or provided user_id does not exist
+ *       401:
+ *         description: Unauthorized - Invalid authentication
  */
-router.post('/', authenticateFirebaseToken, createEmergencyEvent);
+router.post('/', authenticateFirebaseTokenOrApiKey, createEmergencyEvent);
 
 /**
  * @swagger

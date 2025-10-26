@@ -66,17 +66,14 @@ export const getUserEmergencyEvents = async (req: AuthenticatedRequest, res: Res
 // Create new emergency event
 export const createEmergencyEvent = async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const userId = req.user?.uid;
-    const { event_type, description, location, audio_recording_url } = req.body;
+    const authenticatedUserId = req.user?.uid;
+    const { event_type, description, location, audio_recording_url, user_id } = req.body;
+    const apiKey = req.headers['api-key'] as string;
+    const retellApiKey = process.env.RETELL_API_KEY;
     
-    if (!userId) {
-      return res.status(401).json({
-        success: false,
-        error: 'Unauthorized',
-        message: 'User not authenticated'
-      });
-    }
-
+    // Check if using API key authentication
+    const isApiKeyAuth = apiKey && retellApiKey && apiKey === retellApiKey;
+    
     if (!event_type || !description || !location) {
       return res.status(400).json({
         success: false,
@@ -85,9 +82,48 @@ export const createEmergencyEvent = async (req: AuthenticatedRequest, res: Respo
       });
     }
 
+    // Determine which user_id to use based on authentication method
+    let targetUserId: string;
+    
+    if (isApiKeyAuth) {
+      // API key authentication - user_id is required
+      if (!user_id) {
+        return res.status(400).json({
+          success: false,
+          error: 'Bad Request',
+          message: 'user_id is required when using API key authentication'
+        });
+      }
+      targetUserId = user_id;
+    } else {
+      // Firebase token authentication
+      if (!authenticatedUserId) {
+        return res.status(401).json({
+          success: false,
+          error: 'Unauthorized',
+          message: 'User not authenticated'
+        });
+      }
+      // Use provided user_id or fall back to authenticated user
+      targetUserId = user_id || authenticatedUserId;
+    }
+    
+    // Validate that the target user_id exists
+    const userExists = await prisma.users.findUnique({
+      where: { id: targetUserId }
+    });
+    
+    if (!userExists) {
+      return res.status(400).json({
+        success: false,
+        error: 'Bad Request',
+        message: 'Provided user_id does not exist'
+      });
+    }
+
     const emergencyEvent = await prisma.emergency_events.create({
       data: {
-        user_id: userId,
+        user_id: targetUserId,
         event_type,
         description,
         location,
