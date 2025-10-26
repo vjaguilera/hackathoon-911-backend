@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { prisma } from '../utils/database';
 import { AuthenticatedRequest } from '../middleware/auth';
+import { v4 as uuidv4 } from 'uuid';
 
 // Get all emergency events for current user
 export const getUserEmergencyEvents = async (req: AuthenticatedRequest, res: Response) => {
@@ -164,7 +165,7 @@ export const createEmergencyEventFromQueryParams = async (req: Request, res: Res
   const description = typeof req.query.description === 'string' ? req.query.description : undefined;
   const location = typeof req.query.location === 'string' ? req.query.location : undefined;
   const audio_recording_url = typeof req.query.audio_recording_url === 'string' ? req.query.audio_recording_url : undefined;
-  const user_id = typeof req.query.user_id === 'string' ? req.query.user_id : undefined;
+  const user_id = req.query.user_id as string;
 
   console.log("USER ID TO CREATE EVENT", user_id)
 
@@ -198,6 +199,7 @@ export const createEmergencyEventFromQueryParams = async (req: Request, res: Res
 
     const emergencyEvent = await prisma.emergency_events.create({
       data: {
+        id: uuidv4(),
         user_id: finalUserId,
         event_type,
         description,
