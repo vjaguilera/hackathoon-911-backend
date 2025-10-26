@@ -8,7 +8,7 @@ import {
   getUserByRut,
   getUserByPhoneNumber
 } from '../controllers/users';
-import { authenticateFirebaseToken } from '../middleware/auth';
+import { authenticateFirebaseToken, authenticateFirebaseTokenOrApiKey } from '../middleware/auth';
 
 const router = Router();
 
@@ -175,6 +175,7 @@ router.get('/:id', authenticateFirebaseToken, getUserById);
  *     tags: [Users]
  *     security:
  *       - BearerAuth: []
+ *       - ApiKeyAuth: []
  *     parameters:
  *       - in: path
  *         name: rut
@@ -201,7 +202,7 @@ router.get('/:id', authenticateFirebaseToken, getUserById);
  *       401:
  *         description: Authentication required
  */
-router.get('/rut/:rut', authenticateFirebaseToken, getUserByRut);
+router.get('/rut/:rut', authenticateFirebaseTokenOrApiKey, getUserByRut);
 
 /**
  * @swagger
@@ -211,6 +212,7 @@ router.get('/rut/:rut', authenticateFirebaseToken, getUserByRut);
  *     tags: [Users]
  *     security:
  *       - BearerAuth: []
+ *       - ApiKeyAuth: []
  *     parameters:
  *       - in: path
  *         name: phoneNumber
@@ -237,6 +239,6 @@ router.get('/rut/:rut', authenticateFirebaseToken, getUserByRut);
  *       401:
  *         description: Authentication required
  */
-router.get('/phone/:phoneNumber', authenticateFirebaseToken, getUserByPhoneNumber);
+router.get('/phone/:phoneNumber', authenticateFirebaseTokenOrApiKey, getUserByPhoneNumber);
 
 export default router;

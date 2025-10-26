@@ -91,3 +91,30 @@ export const optionalAuth = async (
   
   next();
 };
+
+export const authenticateFirebaseTokenOrApiKey = async (
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    // Check for API Key first
+    const apiKey = req.headers['api-key'] as string;
+    const retellApiKey = process.env.RETELL_API_KEY;
+    
+    if (apiKey && retellApiKey && apiKey === retellApiKey) {
+      // Valid API key - skip user authentication and continue
+      next();
+      return;
+    }
+    
+    // Fall back to Firebase token authentication
+    return authenticateFirebaseToken(req, res, next);
+  } catch (error) {
+    console.error('Authentication middleware error:', error);
+    return res.status(500).json({ 
+      error: 'Internal Server Error', 
+      message: 'Authentication failed' 
+    });
+  }
+};

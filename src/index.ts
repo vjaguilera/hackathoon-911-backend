@@ -51,6 +51,12 @@ const swaggerOptions = {
           scheme: 'bearer',
           bearerFormat: 'JWT',
           description: 'Firebase JWT token'
+        },
+        ApiKeyAuth: {
+          type: 'apiKey',
+          in: 'header',
+          name: 'Api-Key',
+          description: 'API key for Retell integration'
         }
       }
     },
