@@ -24,7 +24,11 @@ const verifyAnswerSchema = z.object({
  * /api/v1/users/{userId}/validation-questions:
  *   get:
  *     summary: Get all validation questions for a user
+ *     description: Retrieves validation questions for a user. Returns complete information including answer hashes when authenticated with API key, limited information when using bearer token.
  *     tags: [Validation Questions]
+ *     security:
+ *       - ApiKeyAuth: []
+ *       - BearerAuth: []
  *     parameters:
  *       - in: path
  *         name: userId
@@ -32,6 +36,12 @@ const verifyAnswerSchema = z.object({
  *         schema:
  *           type: string
  *         description: User ID
+ *       - in: header
+ *         name: api-key
+ *         required: false
+ *         schema:
+ *           type: string
+ *         description: API key for emergency services access
  *     responses:
  *       200:
  *         description: Validation questions retrieved successfully
@@ -49,14 +59,22 @@ const verifyAnswerSchema = z.object({
  *                     properties:
  *                       id:
  *                         type: string
+ *                       user_id:
+ *                         type: string
+ *                         description: Only returned with API key authentication
  *                       question:
  *                         type: string
+ *                       answer_hash:
+ *                         type: string
+ *                         description: Only returned with API key authentication
  *                       created_at:
  *                         type: string
  *                         format: date-time
  *                       updated_at:
  *                         type: string
  *                         format: date-time
+ *       401:
+ *         description: Unauthorized - invalid or missing authentication
  *       404:
  *         description: User not found
  *       500:
@@ -78,15 +96,30 @@ export const getUserValidationQuestions = async (req: Request, res: Response) =>
       });
     }
 
-    // Get validation questions (without answers for security)
+    // Check if request is authenticated via API key
+    const apiKey = req.headers['api-key'] as string;
+    const retellApiKey = process.env.RETELL_API_KEY;
+    const isApiKeyAuth = apiKey && retellApiKey && apiKey === retellApiKey;
+
+    // Select fields based on authentication method
+    const selectFields = isApiKeyAuth ? {
+      id: true,
+      user_id: true,
+      question: true,
+      answer_hash: true,
+      created_at: true,
+      updated_at: true
+    } : {
+      id: true,
+      question: true,
+      created_at: true,
+      updated_at: true
+    };
+
+    // Get validation questions
     const validationQuestions = await prisma.validation_questions.findMany({
       where: { user_id: userId },
-      select: {
-        id: true,
-        question: true,
-        created_at: true,
-        updated_at: true
-      },
+      select: selectFields,
       orderBy: { created_at: 'asc' }
     });
 

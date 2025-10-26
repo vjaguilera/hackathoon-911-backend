@@ -6,12 +6,12 @@ import {
   deleteValidationQuestion,
   verifyValidationAnswer
 } from '../controllers/validationQuestions';
-import { authenticateFirebaseToken } from '../middleware/auth';
+import { authenticateFirebaseToken, authenticateFirebaseTokenOrApiKey } from '../middleware/auth';
 
 const router = Router();
 
 // Routes for user validation questions
-router.get('/users/:userId/validation-questions', authenticateFirebaseToken, getUserValidationQuestions);
+router.get('/users/:userId/validation-questions', authenticateFirebaseTokenOrApiKey, getUserValidationQuestions);
 router.post('/users/:userId/validation-questions', authenticateFirebaseToken, createValidationQuestion);
 router.put('/users/:userId/validation-questions/:questionId', authenticateFirebaseToken, updateValidationQuestion);
 router.delete('/users/:userId/validation-questions/:questionId', authenticateFirebaseToken, deleteValidationQuestion);

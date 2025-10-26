@@ -5,7 +5,8 @@ import {
   getEmergencyEventById,
   updateEmergencyEvent,
   deleteEmergencyEvent,
-  getAllEmergencyEvents
+  getAllEmergencyEvents,
+  retrieveUserInfo
 } from '../controllers/emergencyEvents';
 import { authenticateFirebaseToken, authenticateFirebaseTokenOrApiKey } from '../middleware/auth';
 
@@ -249,5 +250,125 @@ router.put('/:id', authenticateFirebaseToken, updateEmergencyEvent);
  *         description: Emergency event deleted successfully
  */
 router.delete('/:id', authenticateFirebaseToken, deleteEmergencyEvent);
+
+/**
+ * @swagger
+ * /api/v1/emergency-events/retrieve-user-info:
+ *   post:
+ *     summary: Retrieve comprehensive user information
+ *     tags: [Emergency Events]
+ *     security:
+ *       - BearerAuth: []
+ *       - ApiKeyAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               user_id:
+ *                 type: string
+ *                 description: User ID to retrieve information for. Required when using API key authentication. Optional when using Bearer token (uses authenticated user's ID if not provided).
+ *     responses:
+ *       200:
+ *         description: User information retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     user_id:
+ *                       type: string
+ *                     emergency_contacts:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           id:
+ *                             type: string
+ *                           contact_name:
+ *                             type: string
+ *                           phone_number:
+ *                             type: string
+ *                           relationship:
+ *                             type: string
+ *                           email:
+ *                             type: string
+ *                     medical_info:
+ *                       type: object
+ *                       properties:
+ *                         id:
+ *                           type: string
+ *                         medical_conditions:
+ *                           type: string
+ *                         allergies:
+ *                           type: string
+ *                         current_medications:
+ *                           type: string
+ *                         blood_type:
+ *                           type: string
+ *                         emergency_medical_notes:
+ *                           type: string
+ *                     health_insurance:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           id:
+ *                             type: string
+ *                           provider_name:
+ *                             type: string
+ *                           policy_number:
+ *                             type: string
+ *                           coverage_type:
+ *                             type: string
+ *                     bank_accounts:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           id:
+ *                             type: string
+ *                           bank_name:
+ *                             type: string
+ *                           account_number:
+ *                             type: string
+ *                           account_type:
+ *                             type: string
+ *                     addresses:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           id:
+ *                             type: string
+ *                           street_address:
+ *                             type: string
+ *                           city:
+ *                             type: string
+ *                           region:
+ *                             type: string
+ *                           postal_code:
+ *                             type: string
+ *                           country:
+ *                             type: string
+ *                           address_type:
+ *                             type: string
+ *                           is_primary:
+ *                             type: boolean
+ *       400:
+ *         description: Bad Request - Missing user_id for API key auth or user not found
+ *       401:
+ *         description: Unauthorized - Invalid authentication
+ *       500:
+ *         description: Internal server error
+ */
+router.post('/retrieve-user-info', authenticateFirebaseTokenOrApiKey, retrieveUserInfo);
 
 export default router;

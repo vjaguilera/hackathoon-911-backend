@@ -374,3 +374,131 @@ export const getAllEmergencyEvents = async (req: Request, res: Response) => {
     });
   }
 };
+
+// Retrieve comprehensive user information
+export const retrieveUserInfo = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    let userId: string;
+
+    // Handle authentication type
+    const apiKey = req.headers['api-key'] as string;
+    const retellApiKey = process.env.RETELL_API_KEY;
+    
+    if (apiKey && retellApiKey && apiKey === retellApiKey) {
+      // API key authentication - user_id must be provided in body
+      const { user_id } = req.body;
+      
+      if (!user_id) {
+        return res.status(400).json({
+          success: false,
+          error: 'Bad Request',
+          message: 'user_id is required when using API key authentication'
+        });
+      }
+      
+      // Verify user exists
+      const userExists = await prisma.users.findUnique({
+        where: { id: user_id }
+      });
+      
+      if (!userExists) {
+        return res.status(400).json({
+          success: false,
+          error: 'Bad Request',
+          message: 'Provided user_id does not exist'
+        });
+      }
+      
+      userId = user_id;
+    } else {
+      // Bearer token authentication - use authenticated user's ID
+      if (!req.user?.uid) {
+        return res.status(401).json({
+          success: false,
+          error: 'Unauthorized',
+          message: 'User not authenticated'
+        });
+      }
+      
+      // If user_id is provided in body, use it (but must match authenticated user or be admin)
+      const { user_id } = req.body;
+      userId = user_id || req.user.uid;
+      
+      // For security, if user_id is different from authenticated user, verify it exists
+      if (user_id && user_id !== req.user.uid) {
+        const userExists = await prisma.users.findUnique({
+          where: { id: user_id }
+        });
+        
+        if (!userExists) {
+          return res.status(400).json({
+            success: false,
+            error: 'Bad Request',
+            message: 'Provided user_id does not exist'
+          });
+        }
+      }
+    }
+
+    // Fetch all user information in parallel
+    const [
+      emergencyContacts,
+      medicalInfo,
+      healthInsurance,
+      bankAccounts,
+      addresses
+    ] = await Promise.all([
+      // Emergency contacts
+      prisma.emergency_contacts.findMany({
+        where: { user_id: userId },
+        orderBy: { created_at: 'desc' }
+      }),
+      
+      // Medical info
+      prisma.medical_info.findUnique({
+        where: { user_id: userId }
+      }),
+      
+      // Health insurance
+      prisma.health_insurance.findMany({
+        where: { user_id: userId },
+        orderBy: { created_at: 'desc' }
+      }),
+      
+      // Bank accounts
+      prisma.bank_accounts.findMany({
+        where: { user_id: userId },
+        orderBy: { created_at: 'desc' }
+      }),
+      
+      // Addresses
+      prisma.addresses.findMany({
+        where: { user_id: userId },
+        orderBy: [
+          { is_primary: 'desc' }, // Primary addresses first
+          { created_at: 'desc' }
+        ]
+      })
+    ]);
+
+    res.status(200).json({
+      success: true,
+      data: {
+        user_id: userId,
+        emergency_contacts: emergencyContacts,
+        medical_info: medicalInfo,
+        health_insurance: healthInsurance,
+        bank_accounts: bankAccounts,
+        addresses: addresses
+      }
+    });
+
+  } catch (error) {
+    console.error('Error retrieving user info:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Internal Server Error',
+      message: 'Failed to retrieve user information'
+    });
+  }
+};
