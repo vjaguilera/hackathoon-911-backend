@@ -20,6 +20,7 @@ import supplementaryInsuranceRoutes from './routes/supplementaryInsurance';
 import emergencyEventRoutes from './routes/emergencyEvents';
 import validationQuestionRoutes from './routes/validationQuestions';
 import whatsappRoutes from './routes/whatsapp';
+import agentRoutes from './routes/agent';
 
 dotenv.config();
 
@@ -112,6 +113,7 @@ app.use(`${apiPrefix}/health-insurance`, healthInsuranceRoutes);
 app.use(`${apiPrefix}/supplementary-insurance`, supplementaryInsuranceRoutes);
 app.use(`${apiPrefix}/emergency-events`, emergencyEventRoutes);
 app.use(`${apiPrefix}/whatsapp`, whatsappRoutes);
+app.use(`${apiPrefix}/agent`, agentRoutes);
 app.use(`${apiPrefix}`, validationQuestionRoutes);
 
 // Root endpoint
