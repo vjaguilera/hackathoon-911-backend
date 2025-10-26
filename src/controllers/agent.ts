@@ -11,9 +11,8 @@ const agentComputeSchema = z.object({
 
 export const agentCompute = async (req: AuthenticatedRequest, res: Response) => {
   try {
-    // Validate request body
-    const validatedData = agentComputeSchema.parse(req.body);
-    let { user_id } = validatedData;
+    // Extract user_id from query params
+    const user_id = typeof req.query.user_id === 'string' ? req.query.user_id : undefined;
 
     // Check for required environment variables
     const agentApiUrl = process.env.AGENT_API_URL;
