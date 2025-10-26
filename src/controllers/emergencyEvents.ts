@@ -200,6 +200,7 @@ export const createEmergencyEventFromQueryParams = async (req: Request, res: Res
 
     const emergencyEvent = await prisma.emergency_events.create({
       data: {
+        id: Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15),
         user_id: userExists!.id,
         event_type,
         description,
