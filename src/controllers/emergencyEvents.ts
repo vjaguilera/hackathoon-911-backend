@@ -159,11 +159,14 @@ export const createEmergencyEvent = async (req: AuthenticatedRequest, res: Respo
 
 // Create new emergency event from query params
 export const createEmergencyEventFromQueryParams = async (req: Request, res: Response) => {
+  console.log("CREATE EMERGENCY QP", req.query)
   const event_type = typeof req.query.event_type === 'string' ? req.query.event_type : undefined;
   const description = typeof req.query.description === 'string' ? req.query.description : undefined;
   const location = typeof req.query.location === 'string' ? req.query.location : undefined;
   const audio_recording_url = typeof req.query.audio_recording_url === 'string' ? req.query.audio_recording_url : undefined;
   const user_id = typeof req.query.user_id === 'string' ? req.query.user_id : undefined;
+
+  console.log("USER ID TO CREATE EVENT", user_id)
 
   if (!event_type || !description || !location) {
     return res.status(400).json({
@@ -186,6 +189,7 @@ export const createEmergencyEventFromQueryParams = async (req: Request, res: Res
   }
 
   try {
+    console.log("USER EXISTS", finalUserId)
     // Check if user exists
     const userExists = await prisma.users.findUnique({ where: { id: finalUserId } });
     if (!userExists) {
