@@ -157,6 +157,68 @@ export const createEmergencyEvent = async (req: AuthenticatedRequest, res: Respo
   }
 };
 
+// Create new emergency event from query params
+export const createEmergencyEventFromQueryParams = async (req: Request, res: Response) => {
+  const event_type = typeof req.query.event_type === 'string' ? req.query.event_type : undefined;
+  const description = typeof req.query.description === 'string' ? req.query.description : undefined;
+  const location = typeof req.query.location === 'string' ? req.query.location : undefined;
+  const audio_recording_url = typeof req.query.audio_recording_url === 'string' ? req.query.audio_recording_url : undefined;
+  const user_id = typeof req.query.user_id === 'string' ? req.query.user_id : undefined;
+
+  if (!event_type || !description || !location) {
+    return res.status(400).json({
+      error: 'Bad Request',
+      message: 'Missing required fields: event_type, description, location.'
+    });
+  }
+
+  // Determine user_id based on authentication
+  let finalUserId = user_id;
+  const authReq = req as any;
+  if (!finalUserId && authReq.user && authReq.user.uid) {
+    finalUserId = authReq.user.uid;
+  }
+  if (!finalUserId) {
+    return res.status(400).json({
+      error: 'Bad Request',
+      message: 'user_id is required for API key authentication or if not authenticated.'
+    });
+  }
+
+  try {
+    // Check if user exists
+    const userExists = await prisma.users.findUnique({ where: { id: finalUserId } });
+    if (!userExists) {
+      return res.status(400).json({
+        error: 'Bad Request',
+        message: 'Provided user_id does not exist.'
+      });
+    }
+
+    const emergencyEvent = await prisma.emergency_events.create({
+      data: {
+        user_id: finalUserId,
+        event_type,
+        description,
+        location,
+        audio_recording_url
+      }
+    });
+
+    res.status(201).json({
+      success: true,
+      message: 'Emergency event created successfully',
+      data: emergencyEvent
+    });
+  } catch (error) {
+    console.error('Error creating emergency event from query params:', error);
+    res.status(500).json({
+      error: 'Internal Server Error',
+      message: 'Failed to create emergency event.'
+    });
+  }
+};
+
 // Get emergency event by ID
 export const getEmergencyEventById = async (req: AuthenticatedRequest, res: Response) => {
   try {

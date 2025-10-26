@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { 
   getUserEmergencyEvents,
   createEmergencyEvent,
+  createEmergencyEventFromQueryParams,
   getEmergencyEventById,
   updateEmergencyEvent,
   deleteEmergencyEvent,
@@ -132,6 +133,57 @@ router.get('/', authenticateFirebaseToken, getUserEmergencyEvents);
  *         description: Unauthorized - Invalid authentication
  */
 router.post('/', authenticateFirebaseTokenOrApiKey, createEmergencyEvent);
+
+/**
+ * @swagger
+ * /api/v1/emergency-events/qp_create:
+ *   post:
+ *     summary: Create a new emergency event using query parameters
+ *     tags: [Emergency Events]
+ *     security:
+ *       - BearerAuth: []
+ *       - ApiKeyAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: event_type
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: Type of emergency (medical, fire, police, etc.)
+ *       - in: query
+ *         name: description
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: Description of the emergency
+ *       - in: query
+ *         name: location
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: Location of the emergency
+ *       - in: query
+ *         name: audio_recording_url
+ *         schema:
+ *           type: string
+ *           format: uri
+ *         required: false
+ *         description: URL to audio recording if available
+ *       - in: query
+ *         name: user_id
+ *         schema:
+ *           type: string
+ *         required: false
+ *         description: User ID for the emergency event. Required when using API key authentication. Optional when using Bearer token (uses authenticated user's ID if not provided).
+ *     responses:
+ *       201:
+ *         description: Emergency event created successfully
+ *       400:
+ *         description: Bad Request - Missing required fields, user_id required for API key auth, or provided user_id does not exist
+ *       401:
+ *         description: Unauthorized - Invalid authentication
+ */
+router.post('/qp_create', authenticateFirebaseTokenOrApiKey, createEmergencyEventFromQueryParams);
 
 /**
  * @swagger
