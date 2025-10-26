@@ -40,7 +40,7 @@ const swaggerOptions = {
     },
     servers: [
       {
-        url: `http://localhost:${PORT}`,
+        url: process.env.SERVER_URL || `http://localhost:${PORT}`,
         description: 'Development server'
       }
     ],
