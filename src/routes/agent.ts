@@ -14,18 +14,14 @@ const router = Router();
  *     security:
  *       - BearerAuth: []
  *       - ApiKeyAuth: []
- *     requestBody:
- *       required: false
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               user_id:
- *                 type: string
- *                 format: uuid
- *                 description: User ID to process data for. Required when using API key authentication. Optional when using Bearer token (uses authenticated user's ID if not provided).
- *                 example: "123e4567-e89b-12d3-a456-426614174000"
+ *     parameters:
+ *       - in: query
+ *         name: user_id
+ *         required: false
+ *         schema:
+ *           type: string
+ *         description: User ID to process data for. Required when using API key authentication. Optional when using Bearer token (uses authenticated user's ID if not provided).
+ *         example: "123e4567-e89b-12d3-a456-426614174000"
  *     responses:
  *       200:
  *         description: Agent compute completed successfully

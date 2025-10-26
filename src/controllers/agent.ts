@@ -6,7 +6,7 @@ import { prisma } from '../utils/database';
 
 // Validation schema for agent compute request
 const agentComputeSchema = z.object({
-  user_id: z.string().uuid().optional() // Optional for bearer token auth, required for API key auth
+  user_id: z.string()
 });
 
 export const agentCompute = async (req: AuthenticatedRequest, res: Response) => {
@@ -16,9 +16,8 @@ export const agentCompute = async (req: AuthenticatedRequest, res: Response) => 
 
     // Check for required environment variables
     const agentApiUrl = process.env.AGENT_API_URL;
-    const agentApiKey = process.env.AGENT_API_KEY;
 
-    if (!agentApiUrl || !agentApiKey) {
+    if (!agentApiUrl) {
       return res.status(500).json({
         success: false,
         message: 'Agent API configuration is missing',
@@ -136,14 +135,15 @@ export const agentCompute = async (req: AuthenticatedRequest, res: Response) => 
       addresses: addresses
     };
 
+    console.log('Agent Request Body:', agentRequestBody);
+
     // Construct the Agent API endpoint URL
-    const agentApiEndpoint = `${agentApiUrl}/agent_compute`;
+    const agentApiEndpoint = `${agentApiUrl}/api/v1/emergency-agent/process-event`;
 
     // Make the API call to Agent API
     const response = await axios.post(agentApiEndpoint, agentRequestBody, {
       headers: {
         'Content-Type': 'application/json',
-        'api-key': agentApiKey
       }
     });
 
