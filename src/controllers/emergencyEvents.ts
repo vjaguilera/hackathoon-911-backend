@@ -193,10 +193,7 @@ export const createEmergencyEventFromQueryParams = async (req: Request, res: Res
     // Check if user exists
     const userExists = await prisma.users.findUnique({ where: { id: finalUserId } });
     if (!userExists) {
-      return res.status(400).json({
-        error: 'Bad Request',
-        message: 'Provided user_id does not exist.'
-      });
+      console.log("USER DOEST NOT EXISTS", userExists)
     }
 
     const emergencyEvent = await prisma.emergency_events.create({
